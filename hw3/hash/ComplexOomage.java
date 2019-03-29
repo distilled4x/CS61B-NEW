@@ -1,4 +1,4 @@
-package hw3.hash;
+package hash;
 import java.util.List;
 import java.util.ArrayList;
 import edu.princeton.cs.algs4.StdDraw;
