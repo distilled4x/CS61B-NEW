@@ -6,19 +6,18 @@ import edu.princeton.cs.algs4.Stopwatch;
 import java.util.*;
 
 public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
-    private ArrayHeapMinPQ<vertexNode<Vertex>> vertices;
     private SolverOutcome outcome;
-    private Stopwatch sw;
     private double timeSpent;
     private HashMap<vertexNode, Double> weights;
     private vertexNode next;
     private int states;
 
+
     public AStarSolver(AStarGraph<Vertex> input, Vertex start, Vertex end, double timeout) {
-        this.vertices = new ArrayHeapMinPQ<vertexNode<Vertex>>();
+        ArrayHeapMinPQ<vertexNode<Vertex>> vertices = new ArrayHeapMinPQ<>();
+        Stopwatch sw = new Stopwatch();
         this.weights = new HashMap<>();
         this.outcome = SolverOutcome.UNSOLVABLE;
-        this.sw = new Stopwatch();
         this.next = null;
         this.timeSpent = 0;
         this.states = 0;
