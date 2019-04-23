@@ -203,11 +203,15 @@ public class ArrayHeapMinPQ<T> implements ExtrinsicMinPQ<T> {
         int index = keySet.get(item);
         keys[index].setValue(priority);
 
+        /*
         if (keys[parent(index)].getValue() < priority) {
             sink(index);
         } else {
             swim(index);
-        }
+        }*/
+
+        sink(index);
+        swim(index);
     }
 
 
