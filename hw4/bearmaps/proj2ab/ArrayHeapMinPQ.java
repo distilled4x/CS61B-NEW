@@ -30,11 +30,11 @@ public class ArrayHeapMinPQ<T> implements ExtrinsicMinPQ<T> {
         }
     }
 
-    ArrayHeapMinPQ() {
+    public ArrayHeapMinPQ() {
         this(4);
     }
 
-    ArrayHeapMinPQ(int size) {
+    public ArrayHeapMinPQ(int size) {
         this.keys = new TNode[size];
         this.size = 0;
         this.keySet = new HashMap<>();
@@ -197,11 +197,8 @@ public class ArrayHeapMinPQ<T> implements ExtrinsicMinPQ<T> {
         int index = keySet.get(item);
         keys[index].setValue(priority);
 
-        if (keys[parent(index)].getValue() < priority) {
-            sink(index);
-        } else {
-            swim(index);
-        }
+        sink(index);
+        swim(index);
     }
 
 }

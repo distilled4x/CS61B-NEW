@@ -3,101 +3,146 @@ package bearmaps.hw4;
 import bearmaps.proj2ab.ArrayHeapMinPQ;
 import edu.princeton.cs.algs4.Stopwatch;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class AStarSolver<Vertex> implements ShortestPathsSolver<Vertex> {
-    ArrayHeapMinPQ<Vertex> vertices;
-    SolverOutcome outcome;
-    HashMap<Vertex, Double> fringe;
-    AStarGraph<Vertex> input;
-    Vertex end;
+    private ArrayHeapMinPQ<vertexNode<Vertex>> vertices;
+    private SolverOutcome outcome;
+    private Stopwatch sw;
+    private double timeSpent;
+    private HashMap<vertexNode, Double> weights;
+    private vertexNode next;
+    private int states;
 
     public AStarSolver(AStarGraph<Vertex> input, Vertex start, Vertex end, double timeout) {
-        this.vertices = new ArrayHeapMinPQ<>();
-        this.fringe = new HashMap<>();
+        this.vertices = new ArrayHeapMinPQ<vertexNode<Vertex>>();
+        this.weights = new HashMap<>();
         this.outcome = SolverOutcome.UNSOLVABLE;
-        this.input = input;
-        this.end = end;
-        Stopwatch sw = new Stopwatch();
+        this.sw = new Stopwatch();
+        this.next = null;
+        this.timeSpent = 0;
+        this.states = 0;
         boolean timesUp = false;
 
-        vertices.add(start, input.estimatedDistanceToGoal(start, end));
-        fringe.put(start, input.estimatedDistanceToGoal(start, end));
-        Vertex p = start;
+        vertexNode<Vertex> startNode = new vertexNode<>(start);
+        vertices.add(startNode, input.estimatedDistanceToGoal(start, end));
+        weights.put(startNode, 0.0);
 
         while (vertices.size() > 0) {
-            if (vertices.getSmallest().equals(end)) {
-                outcome = SolverOutcome.SOLVED;
-                //other stuff
+            next = vertices.removeSmallest();
+            Vertex x = (Vertex) next.v;
+
+
+            if (timeSpent > timeout) {
+                timesUp = true;
                 return;
             }
 
-            p = vertices.removeSmallest();
-            for (WeightedEdge<Vertex> v : input.neighbors(p)) {
-                vertices.add(v.to(), Double.MAX_VALUE);
-                fringe.put(v.to(), Double.MAX_VALUE);
-                relax(v);
+            if (x.equals(end)) {
+                outcome = SolverOutcome.SOLVED;
+                return;
             }
+
+            states++;
+
+            for(WeightedEdge<Vertex> edge : input.neighbors(x)) {
+                Vertex to = edge.to();
+                double weight = edge.weight();
+                double distance = Double.MAX_VALUE;
+
+                vertexNode toNode = new vertexNode(to, next);
+                double priority = weights.get(next) + weight;
+
+                if(vertices.contains(toNode)) {
+                    distance = weights.get(toNode);
+                }
+
+                if (weights.get(next) + weight < distance) {
+
+                    if (vertices.contains(toNode)) {
+                        vertices.changePriority(toNode, priority + input.estimatedDistanceToGoal((Vertex) toNode.v, end));
+                    } else {
+                        vertices.add(toNode, priority + input.estimatedDistanceToGoal((Vertex) toNode.v, end));
+                    }
+                    weights.put(toNode, priority);
+                }
+            }
+
+            timeSpent = sw.elapsedTime();
         }
-
-
-
-
 
         if (timesUp) {
             outcome = SolverOutcome.TIMEOUT;
         }
     }
 
+    private class vertexNode<Vertex> {
+        private Vertex v;
+        private vertexNode parent;
 
-    // relaxes priorities in queue
-    private void relax(WeightedEdge<Vertex> v) {
-        Vertex p = v.from();
-        Vertex q = v.to();
-        double w = v.weight();
-
-        if (fringe.get(p) + w < fringe.get(q)) {
-            double priority = fringe.get(p) + w + input.estimatedDistanceToGoal(q, end);
-
-            if (vertices.contains(q)) {
-                vertices.changePriority(q, priority);
-            } else {
-                vertices.add(q, priority);
-            }
-            fringe.put(q, priority);
+        public vertexNode(Vertex v, vertexNode parent) {
+            this.v = v;
+            this.parent = parent;
         }
 
+        public vertexNode(Vertex v) {
+            this(v, null);
+        }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof vertexNode)) return false;
+            vertexNode that = (vertexNode) o;
+            return Objects.equals(v, that.v);
+        }
 
+        @Override
+        public int hashCode() {
+            return Objects.hash(v);
+        }
     }
-
-
-
 
     @Override
     public SolverOutcome outcome() {
-        return null;
+        return outcome;
     }
 
     @Override
     public List<Vertex> solution() {
-        return null;
+        vertexNode solution = next;
+        List<Vertex> solutionList = new LinkedList<>();
+
+        if (outcome != SolverOutcome.SOLVED) {
+            return solutionList;
+        }
+
+        ((LinkedList<Vertex>) solutionList).addFirst((Vertex) solution.v);
+
+        while (solution.parent != null) {
+            solution = solution.parent;
+            ((LinkedList<Vertex>) solutionList).addFirst((Vertex) solution.v);
+        }
+
+        return solutionList;
     }
 
     @Override
     public double solutionWeight() {
-        return 0;
+        if (outcome != SolverOutcome.SOLVED) {
+            return 0;
+        }
+
+        return weights.get(next);
     }
 
     @Override
     public int numStatesExplored() {
-        return 0;
+        return states;
     }
 
     @Override
     public double explorationTime() {
-        return 0;
+        return timeSpent;
     }
 }
