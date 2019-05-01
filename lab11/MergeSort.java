@@ -42,8 +42,15 @@ public class MergeSort {
      */
     private static <Item extends Comparable> Queue<Queue<Item>>
             makeSingleItemQueues(Queue<Item> items) {
-        // Your code here!
-        return null;
+        Queue<Queue<Item>> singlesQueue = new Queue<>();
+
+        for (Item item : items) {
+            Queue<Item> singleItem = new Queue<>();
+            singleItem.enqueue(item);
+            singlesQueue.enqueue(singleItem);
+        }
+
+        return singlesQueue;
     }
 
     /**
@@ -61,8 +68,14 @@ public class MergeSort {
      */
     private static <Item extends Comparable> Queue<Item> mergeSortedQueues(
             Queue<Item> q1, Queue<Item> q2) {
-        // Your code here!
-        return null;
+
+        Queue<Item> sorted = new Queue<>();
+
+        while (!q1.isEmpty() || !q2.isEmpty()) {
+            sorted.enqueue(getMin(q1, q2));
+        }
+
+        return sorted;
     }
 
     /**
@@ -77,7 +90,50 @@ public class MergeSort {
      */
     public static <Item extends Comparable> Queue<Item> mergeSort(
             Queue<Item> items) {
-        // Your code here!
-        return items;
+
+        Queue<Queue<Item>> singleItems = makeSingleItemQueues(items);
+        return sort(singleItems).dequeue();
+    }
+
+
+    /**
+     * Private recursive helper method.  Does the heavy lifting of the sorting.
+     *
+     * @param   items  A Queue of Queues to be sorted
+     * @return         A Queue containing a single sorted Queue
+     *
+     */
+    private static <Item extends Comparable> Queue<Queue<Item>> sort(Queue<Queue<Item>> items) {
+        if (items.size() == 1) {
+            return items;
+
+        } else if(items.size() == 2) {
+            Queue<Item> sorted = mergeSortedQueues(items.dequeue(), items.dequeue());
+            items.enqueue(sorted);
+            return items;
+
+        } else {
+
+            int size = items.size();
+            int mid = size / 2;
+
+            Queue<Queue<Item>> q1 = new Queue<>();
+            Queue<Queue<Item>> q2 = new Queue<>();
+
+            for (int j = 0; j < size; j++) {
+                Queue<Item> item = items.dequeue();
+
+                if (j < mid) {
+                    q1.enqueue(item);
+                } else {
+                    q2.enqueue(item);
+                }
+            }
+
+            items.enqueue(sort(q1).dequeue());
+            items.enqueue(sort(q2).dequeue());
+        }
+
+        return sort(items);
     }
 }
