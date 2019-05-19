@@ -17,8 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static bearmaps.proj2c.utils.Constants.SEMANTIC_STREET_GRAPH;
-import static bearmaps.proj2c.utils.Constants.ROUTE_LIST;
+import static bearmaps.proj2c.utils.Constants.*;
 
 /**
  * Handles requests from the web browser for map images. These images
@@ -84,12 +83,102 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
      */
     @Override
     public Map<String, Object> processRequest(Map<String, Double> requestParams, Response response) {
-        //System.out.println("yo, wanna know the parameters given by the web browser? They are:");
-        //System.out.println(requestParams);
+        System.out.println(requestParams);
         Map<String, Object> results = new HashMap<>();
-        System.out.println("Since you haven't implemented RasterAPIHandler.processRequest, nothing is displayed in "
-                + "your browser.");
-        return results;
+        System.out.println();
+
+
+        double lrlon = requestParams.get("lrlon");
+        double ullon = requestParams.get("ullon");
+        double w = requestParams.get("w");
+        double h = requestParams.get("h");
+        double ullat = requestParams.get("ullat");
+        double lrlat = requestParams.get("lrlat");
+
+        Map<String, Object> pGrid = new HashMap<>();
+
+        //sanity check
+        if (ullat < lrlat || ullon > lrlon) {
+            return queryFail();
+        }
+
+        double LonDPP = (lrlon - ullon) / w;
+
+        // check corner cases
+        if (ullon < ROOT_ULLON) {
+            ullon = ROOT_ULLON;
+        }
+        if (ullat > ROOT_ULLAT) {
+            ullat = ROOT_ULLAT;
+        }
+        if (lrlat < ROOT_LRLAT) {
+            lrlat = ROOT_LRLAT;
+        }
+        if (lrlon > ROOT_LRLON) {
+            lrlon = ROOT_LRLON;
+        }
+
+
+        //calculate depth
+        double depthLonDPP = (ROOT_LRLON - ROOT_ULLON) / TILE_SIZE;
+        double lonConstant = ROOT_LRLON - ROOT_ULLON;
+        double scaleULLON = ROOT_ULLON;
+
+        int depth = 0;
+        while ((depthLonDPP > LonDPP) && (depth < 7)) {
+            depth++;
+            lonConstant = lonConstant / (2);
+            scaleULLON = scaleULLON + lonConstant;
+            depthLonDPP = (ROOT_LRLON - scaleULLON) / TILE_SIZE;
+        }
+
+
+        //gen boundries
+        int scaler = (int) Math.pow(2, depth);
+
+        double lonScale = (ROOT_LRLON - ROOT_ULLON) / scaler;
+        double latScale = (ROOT_ULLAT - ROOT_LRLAT) / scaler;
+
+
+        double absX1 = (ullon - ROOT_ULLON) / lonScale;
+        int x1 = ((int) absX1);
+        double ulLonBound = ROOT_ULLON + (lonScale * x1);
+
+
+        double absX2 = (ROOT_LRLON - lrlon) / lonScale;
+        int x2 = scaler - ((int) absX2);
+        double lrLonBound = ulLonBound + ((x2 - x1) * lonScale);
+
+
+        double absY1 = Math.abs((ullat - ROOT_ULLAT)) / latScale;
+        int y1 = ((int) absY1);
+        double ulLatBound = ROOT_ULLAT - (latScale * y1);
+
+
+        double absY2 = Math.abs((ROOT_LRLAT - lrlat)) / latScale;
+        int y2 = scaler - ((int) absY2);
+        double lrLatBound = ulLatBound - ((y2 - y1) * latScale);
+
+
+        String[][] render_grid = new String[(y2 - y1)][(x2 - x1)];
+
+        for (int x = 0; x < (x2 - x1); x++) {
+            for (int y = 0; y < (y2 - y1); y++) {
+                render_grid[y][x] = "d" + depth + "_x" + (x + x1) + "_y" + ((y + y1)) + ".png";
+            }
+        }
+
+
+        pGrid.put("render_grid", render_grid);
+        pGrid.put("raster_ul_lon", ulLonBound);
+        pGrid.put("raster_lr_lon", lrLonBound);
+        pGrid.put("raster_ul_lat", ulLatBound);
+        pGrid.put("raster_lr_lat", lrLatBound);
+        pGrid.put("depth", depth);
+        pGrid.put("query_success", true);
+
+
+        return pGrid;
     }
 
     @Override
